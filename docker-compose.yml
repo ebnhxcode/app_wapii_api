@@ -1,0 +1,73 @@
+version: "3.3"
+
+# Docker Services
+services:
+
+  postgres:
+    container_name: postgres
+    build:
+      context: .
+      dockerfile: deploy/local/dockerfiles/Postgres.Dockerfile
+    environment:
+      POSTGRES_DB: appwapiidb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "Postgres2019!"
+      POSTGRES_HOST: 0.0.0.0
+    volumes:
+      - postgresdbdata:/var/lib/postgresql/data
+    networks:
+      - localnet
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  appwapiiapipg:
+    container_name: appwapiiapipg
+    tty: true
+    stdin_open: true
+    depends_on:
+      - postgres
+    networks:
+      - localnet
+    build:
+      context: .
+      dockerfile: deploy/local/dockerfiles/ApiSlimBullseye.Dockerfile
+    volumes:
+      - ./app:/app
+      - bundlecachedata:/usr/local/bundle
+    ports:
+      - "3030:3030"
+    env_file:
+      - deploy/local/.env
+
+  appwapiiapi:
+    container_name: appwapiiapi
+    tty: true
+    stdin_open: true
+    networks:
+      - localnet
+    build:
+      context: .
+      dockerfile: deploy/local/dockerfiles/ApiSlimBullseye.Dockerfile
+    volumes:
+      - ./app:/app
+      - bundlecachedata:/usr/local/bundle
+    ports:
+      - "3030:3030"
+    env_file:
+      - deploy/local/.env
+
+
+# Docker Networks
+networks:
+  localnet:
+    external: true
+
+# Docker Volumes
+volumes:
+  postgresdbdata:
+  bundlecachedata:
