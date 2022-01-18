@@ -1,10 +1,11 @@
 class PostsController < ApplicationController
 
+  API_URL = 'https://jsonplaceholder.typicode.com'
 
   # GET /posts
   def index
 
-    response = Faraday.get 'https://jsonplaceholder.typicode.com/posts' do |req|
+    response = Faraday.get "#{API_URL}/posts" do |req|
       req.headers['User-Agent'] = 'App Wapii Api.'
       req.headers['cache-control'] = 'no-cache'
       req.headers['Content-Type'] = 'application/json'
@@ -20,7 +21,7 @@ class PostsController < ApplicationController
   # GET /posts
   def show
 
-    response = Faraday.get "https://jsonplaceholder.typicode.com/posts/#{params[:id]}" do |req|
+    response = Faraday.get "#{API_URL}/posts/#{params[:id]}" do |req|
       req.headers['User-Agent'] = 'App Wapii Api.'
       req.headers['cache-control'] = 'no-cache'
       req.headers['Content-Type'] = 'application/json'
@@ -36,7 +37,7 @@ class PostsController < ApplicationController
   # GET/POST /posts/{id}/comments
 
   def show_comments
-    response = Faraday.get "https://jsonplaceholder.typicode.com/posts/#{params[:id]}/comments" do |req|
+    response = Faraday.get "#{API_URL}/posts/#{params[:id]}/comments" do |req|
       req.headers['User-Agent'] = 'App Wapii Api.'
       req.headers['cache-control'] = 'no-cache'
       req.headers['Content-Type'] = 'application/json'
@@ -50,8 +51,10 @@ class PostsController < ApplicationController
 
   def trending
 
+    limit = params[:n].to_i || 5
 
-    responsePosts = Faraday.get 'https://jsonplaceholder.typicode.com/posts' do |req|
+
+    responsePosts = Faraday.get "#{API_URL}/posts" do |req|
       req.headers['User-Agent'] = 'App Wapii Api.'
       req.headers['cache-control'] = 'no-cache'
       req.headers['Content-Type'] = 'application/json'
@@ -63,26 +66,47 @@ class PostsController < ApplicationController
 
     posts.each do |post|
 
-      responseComments = Faraday.get "https://jsonplaceholder.typicode.com/comments?postId=#{post['id']}" do |req|
+      responseComments = Faraday.get "#{API_URL}/comments?postId=#{post['id']}" do |req|
         req.headers['User-Agent'] = 'App Wapii Api.'
         req.headers['cache-control'] = 'no-cache'
         req.headers['Content-Type'] = 'application/json'
       end
 
       postComments = parse_json(responseComments.body)
-      #puts "https://jsonplaceholder.typicode.com/posts?userId=#{user['id']}"
-      #puts userPosts
-      #return
 
-      #postsComments.push({userName: user['name'], userPosts: userPosts.length})
-      postsComments.push(postComments)
+      postsComments.push({
+        postTitle: post['title'],
+        postBody: post['body'],
+        postUserId: post['userId'],
+        postComments: postComments.length
+      })
 
     end
 
-      render json: postsComments, status: :ok
-      #puts user
-      #return
+    postsComments = postsComments.sort_by{|p| p[:postComments]}.take(limit)
 
+    limitedPostsComments = []
+
+    postsComments.each do |postComment|
+
+      responseUser = Faraday.get "#{API_URL}/users/#{postComment[:postUserId]}" do |req|
+        req.headers['User-Agent'] = 'App Wapii Api.'
+        req.headers['cache-control'] = 'no-cache'
+        req.headers['Content-Type'] = 'application/json'
+      end
+
+      user = parse_json(responseUser.body)
+
+      limitedPostsComments.push({
+        postUserName: user['name'],
+        postTitle: postComment[:postTitle],
+        postBody: postComment[:postBody],
+        postComments: postComment.length
+      })
+
+    end
+
+    render json: { limitedPostsComments: limitedPostsComments, error: nil }, status: :ok
 
   end
 
