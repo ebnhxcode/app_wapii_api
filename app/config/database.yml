@@ -5,12 +5,12 @@ default: &default
     adapter: postgresql
     timeout: 60000
     encoding: unicode
-    # url: <%= ENV.fetch("DATABASE_URL") %>
-    pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
-    database: <%= ENV.fetch("POSTGRES_DB") %>
-    username: <%= ENV.fetch("POSTGRES_USER") %>
-    host: <%= ENV.fetch("POSTGRES_HOST") %>
-    password: <%= ENV.fetch("POSTGRES_PASS") %>
+    url: <%= ENV.fetch("DATABASE_URL") %>
+    #pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    #database: <%= ENV.fetch("POSTGRES_DB") %>
+    #username: <%= ENV.fetch("POSTGRES_USER") %>
+    #host: <%= ENV.fetch("POSTGRES_HOST") %>
+    #password: <%= ENV.fetch("POSTGRES_PASS") %>
 
 development:
   <<: *default
