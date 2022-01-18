@@ -1,53 +1,46 @@
 class UsersController < ApplicationController
-  before_action :authorize_request, except: :create
-  before_action :find_user, except: %i[create index]
+
 
   # GET /users
   def index
-    @users = User.all
-    render json: @users, status: :ok
-  end
 
-  # GET /users/{username}
-  def show
-    render json: @user, status: :ok
-  end
-
-  # POST /users
-  def create
-    @user = User.new(user_params)
-    if @user.save
-      render json: @user, status: :created
-    else
-      render json: { errors: @user.errors.full_messages },
-             status: :unprocessable_entity
+    responseUsers = Faraday.get 'https://jsonplaceholder.typicode.com/users' do |req|
+      req.headers['User-Agent'] = 'App Wapii Api.'
+      req.headers['cache-control'] = 'no-cache'
+      req.headers['Content-Type'] = 'application/json'
     end
-  end
 
-  # PUT /users/{username}
-  def update
-    unless @user.update(user_params)
-      render json: { errors: @user.errors.full_messages },
-             status: :unprocessable_entity
+    users = parse_json(responseUsers.body)
+
+    usersPosts = []
+
+    users.each do |user|
+
+      responsePosts = Faraday.get "https://jsonplaceholder.typicode.com/posts?userId=#{user['id']}" do |req|
+        req.headers['User-Agent'] = 'App Wapii Api.'
+        req.headers['cache-control'] = 'no-cache'
+        req.headers['Content-Type'] = 'application/json'
+      end
+
+      userPosts = parse_json(responsePosts.body)
+      #puts "https://jsonplaceholder.typicode.com/posts?userId=#{user['id']}"
+      #puts userPosts
+      #return
+
+      usersPosts.push({userName: user['name'], userPosts: userPosts.length})
+
+
+      #render json: { user: user, error: nil }, status: :ok
+      #puts user
+      #return
+
     end
+
+
+    render json: { userPosts: usersPosts.sort_by{|p| p[:userPosts]}, error: nil }, status: :ok
+    # render json: json, error: nil , status: :ok
+
   end
 
-  # DELETE /users/{username}
-  def destroy
-    @user.destroy
-  end
 
-  private
-
-  def find_user
-    @user = User.find_by_username!(params[:_username])
-  rescue ActiveRecord::RecordNotFound
-    render json: { errors: "User not found" }, status: :not_found
-  end
-
-  def user_params
-    params.permit(
-      :avatar, :name, :username, :email, :password, :password_confirmation
-    )
-  end
 end
