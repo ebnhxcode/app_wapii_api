@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   get '/posts/:id/comments' => 'posts#show_comments'
   get '/comments' => 'comments#index'
 
-  get '/trending/:n' => 'posts#trending'
+  get '/trending/(:n)' => 'posts#trending'
   get '/influencers/:n' => 'users#influencers'
 
 
