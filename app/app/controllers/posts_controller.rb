@@ -3,15 +3,51 @@ class PostsController < ApplicationController
 
   # GET /posts
   def index
+    require 'will_paginate/array'
+
     response = Faraday.get "#{API_URL}/posts" do |req|
       req.headers["User-Agent"] = "App Wapii Api."
       req.headers["cache-control"] = "no-cache"
       req.headers["Content-Type"] = "application/json"
     end
 
-    json = parse_json(response.body)
+    posts = parse_json(response.body)
 
-    render json: { data: json, error: nil }, status: :ok
+    postsUsers = []
+    postsComments = []
+    postsRender = []
+
+    posts.each do |post|
+
+      responseUser = Faraday.get "#{API_URL}/users/#{post["userId"]}" do |req|
+        req.headers["User-Agent"] = "App Wapii Api."
+        req.headers["cache-control"] = "no-cache"
+        req.headers["Content-Type"] = "application/json"
+      end
+
+      userPost = parse_json(responseUser.body)
+
+      responseComments = Faraday.get "#{API_URL}/comments?postId=#{post["id"]}" do |req|
+        req.headers["User-Agent"] = "App Wapii Api."
+        req.headers["cache-control"] = "no-cache"
+        req.headers["Content-Type"] = "application/json"
+      end
+
+      commentsPost = parse_json(responseComments.body)
+
+      postsRender.push({
+        author: userPost["name"],
+        title: post["title"],
+        body: post["body"],
+        comments: commentsPost.sort_by { |p| p["id"] }.take(3),
+        commentsCount: commentsPost.length
+      })
+
+
+    end
+
+    render json: { posts: postsRender.paginate(page: params[:page], per_page: 10) }, status: :ok
+
   end
 
   # GET /posts/{id}
