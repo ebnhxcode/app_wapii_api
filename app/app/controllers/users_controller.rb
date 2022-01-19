@@ -26,9 +26,51 @@ class UsersController < ApplicationController
     end
 
     render json: { userPosts: usersPosts.sort_by { |p| p[:userPosts] }, error: nil }, status: :ok
-    # render json: json, error: nil , status: :ok
 
   end
+
+  # GET /users/:id/posts
+  def users_posts
+    responseUsers = Faraday.get "#{API_URL}/users" do |req|
+      req.headers["User-Agent"] = "App Wapii Api."
+      req.headers["cache-control"] = "no-cache"
+      req.headers["Content-Type"] = "application/json"
+    end
+
+    users = parse_json(responseUsers.body)
+
+    userPosts = []
+
+    users.each do |user|
+      responsePosts = Faraday.get "#{API_URL}/posts?userId=#{params[:id]}" do |req|
+        req.headers["User-Agent"] = "App Wapii Api."
+        req.headers["cache-control"] = "no-cache"
+        req.headers["Content-Type"] = "application/json"
+      end
+
+      userPosts = parse_json(responsePosts.body)
+
+    end
+
+    render json: { userPosts: userPosts, error: nil }, status: :ok
+
+  end
+
+
+  # GET /users/lists
+  def users_lists
+    responseUsers = Faraday.get "#{API_URL}/users" do |req|
+      req.headers["User-Agent"] = "App Wapii Api."
+      req.headers["cache-control"] = "no-cache"
+      req.headers["Content-Type"] = "application/json"
+    end
+
+    users = parse_json(responseUsers.body)
+
+    render json: { users: users, error: nil }, status: :ok
+
+  end
+
 
   # GET /influencers/{n}
   def influencers
