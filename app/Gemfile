@@ -48,11 +48,11 @@ gem 'bootsnap', '>= 1.4.4', require: false
 
 
 
-group :development, :test do
-  # Call 'byebug' anywhere in the code to stop execution and get a debugger console
-  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
-  gem 'pry', '~> 0.13.1'
-end
+# group :development, :test do
+#   # Call 'byebug' anywhere in the code to stop execution and get a debugger console
+#   gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+#   gem 'pry', '~> 0.13.1'
+# end
 
 group :development do
   gem 'listen', '~> 3.3'
@@ -62,7 +62,7 @@ group :development do
 end
 
 # Added group to make test for the API
-group :test do
+group :development, :test do
   # Deps added to make additional validations por rspec
   gem 'factory_bot_rails', '~> 4.0'
   gem 'shoulda', '~> 3.6.0'
@@ -71,6 +71,8 @@ group :test do
   gem 'faker', '~> 1.9'
   gem 'database_cleaner', '~> 1.7'
   gem 'rspec-rails', '~> 3.5'
+  gem 'byebug', platforms: [:mri, :mingw, :x64_mingw]
+  gem 'pry', '~> 0.13.1'
 end
 
 
