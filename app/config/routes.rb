@@ -7,8 +7,6 @@ Rails.application.routes.draw do
   get '/comments' => 'comments#index'
 
   get '/trending/(:n)' => 'posts#trending'
-  get '/influencers/:n' => 'users#influencers'
-
-
+  get '/influencers/(:n)' => 'users#influencers'
 
 end
