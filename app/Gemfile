@@ -20,6 +20,7 @@ gem 'mini_magick', '~> 4.11.0'
 #gem 'knock'
 gem "faraday"
 gem "faraday_middleware"
+gem 'will_paginate', '~> 3.3.0'
 
 # Fix
 gem 'net-smtp', require: false
