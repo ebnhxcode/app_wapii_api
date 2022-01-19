@@ -21,16 +21,8 @@ class UsersController < ApplicationController
       end
 
       userPosts = parse_json(responsePosts.body)
-      #puts "#{API_URL}/posts?userId=#{user['id']}"
-      #puts userPosts
-      #return
 
       usersPosts.push({ userName: user["name"], userPosts: userPosts.length })
-
-      #render json: { user: user, error: nil }, status: :ok
-      #puts user
-      #return
-
     end
 
     render json: { userPosts: usersPosts.sort_by { |p| p[:userPosts] }, error: nil }, status: :ok
@@ -70,28 +62,45 @@ class UsersController < ApplicationController
 
     usersPosts = usersPosts.flatten.uniq
 
-    postsComments = []
-
-    usersPosts.each do |post|
-      responsePostsComments = Faraday.get "#{API_URL}/comments?postId=#{post["id"]}" do |req|
-        req.headers["User-Agent"] = "App Wapii Api."
-        req.headers["cache-control"] = "no-cache"
-        req.headers["Content-Type"] = "application/json"
-      end
-
-      postComments = parse_json(responsePostsComments.body)
-
-      postsComments.push({
-        userId: post["userId"],
-        postId: post["id"],
-        comments: postComments.length,
+    usersPostsCounts = []
+    postsUserIds.each do |userId|
+      userPostsCount = usersPosts.select { |h| h["userId"] == userId }.map { |h| h["id"] }.count
+      usersPostsCounts.push({
+        userId: userId,
+        userPosts: usersPosts.select { |h| h["userId"] == userId },
+        userPostsCount: userPostsCount,
       })
     end
 
+    usersPostsCounts = usersPostsCounts.sort_by { |p| p[:userPostsCount] }.reverse.take(limit)
+
+    postsComments = []
+
+    usersPostsCounts.each do |user|
+      user[:userPosts].each do |post|
+        responsePostsComments = Faraday.get "#{API_URL}/comments?postId=#{post["userId"]}" do |req|
+          req.headers["User-Agent"] = "App Wapii Api."
+          req.headers["cache-control"] = "no-cache"
+          req.headers["Content-Type"] = "application/json"
+        end
+
+        postComments = parse_json(responsePostsComments.body)
+
+        postsComments.push({
+          userId: post["userId"],
+          postId: post["id"],
+          comments: postComments.length,
+        })
+      end
+    end
+
+    # render json: { postsComments: postsComments, error: nil }, status: :ok
+    # return
+
     popularity = []
 
-    postsUserIds.each do |userId|
-      responseUser = Faraday.get "#{API_URL}/users/#{userId}" do |req|
+    usersPostsCounts.each do |userPost|
+      responseUser = Faraday.get "#{API_URL}/users/#{userPost[:userId]}" do |req|
         req.headers["User-Agent"] = "App Wapii Api."
         req.headers["cache-control"] = "no-cache"
         req.headers["Content-Type"] = "application/json"
@@ -99,14 +108,17 @@ class UsersController < ApplicationController
 
       user = parse_json(responseUser.body)
 
-      userComments = postsComments.select { |h| h[:userId] == userId }.map { |h| h[:comments] }.reduce(:+)
+      userComments = postsComments.select { |h| h[:userId] == userPost[:userId] }.map { |h| h[:comments] }.reduce(:+)
 
       popularity.push({
-        userId: userId,
+        userId: userPost[:userId],
         userName: user["name"],
         commentsCount: userComments,
       })
     end
+
+    # render json: { popularity: popularity, error: nil }, status: :ok
+    # return
 
     totalComments = popularity.map { |s| s[:commentsCount] }.reduce(0, :+)
 
@@ -116,6 +128,6 @@ class UsersController < ApplicationController
       user[:percentageOfPopularity] = percentageOfPopularity
     end
 
-    render json: { data: popularity.sort_by { |p| p[:percentageOfPopularity] }.take(limit), error: nil }, status: :ok
+    render json: { data: popularity.sort_by { |p| p[:percentageOfPopularity] }, error: nil }, status: :ok
   end
 end
